@@ -34,6 +34,7 @@ app.get('/auth/callback', async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
+
     // Decode the JWT token to get the user ID
     // const decodedToken = jwtDecode(tokens.id_token);
     // const userId = decodedToken.email;
@@ -85,8 +86,11 @@ app.get('/auth/callback', async (req, res) => {
         console.log('JSON file sent successfully');
         // Remove the JSON file after sending
         fs.unlinkSync(jsonFileName);
+        res.redirect("/")
       }
-    });
+    })
+    
+    
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).send(`Error decoding token: ${error.message}`);
