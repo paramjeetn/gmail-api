@@ -21,6 +21,14 @@ app.get('/', (req, res) => {
   res.send('Hello, this is a Gmail API example!');
 });
 
+app.get('/auth', (req, res) => {
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'online',
+    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+  });
+  res.redirect(authUrl);
+});
+
 app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
   try {
@@ -94,8 +102,6 @@ app.get('/auth/callback', async (req, res) => {
     res.status(500).send(`Error retrieving messages: ${error.message}`);
   }
 });
-
-
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
