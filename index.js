@@ -12,7 +12,7 @@ const port=3000;
 
 const CLIENT_ID="579714708688-f9t4vp17ea77hm42rfmk0p69s3s70r24.apps.googleusercontent.com";
 const CLIENT_SECRET="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";
-const REDIRECT_URI="http://localhost:3000/auth/callback";
+const REDIRECT_URI="https://real-estate-project-mu.vercel.app/auth/callback";
 const REFRESH_TOKEN="1//04g3FDiRRyOE8CgYIARAAGAQSNwF-L9IrWZRn0ocQldIFrQbkqcTEqewcB-ztpXT7XhcYg94XnKvtkyTUJnnv9BBJVxPr4TmPpm8";
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
@@ -60,13 +60,14 @@ app.get('/auth/callback', async (req, res) => {
       const messageSnippet = messageDetails.data.snippet;
       const messageBody = messageDetails.data.payload.parts && messageDetails.data.payload.parts[0]
       ? Buffer.from(messageDetails.data.payload.parts[0].body.data, 'base64').toString('utf-8')
-      : 'No body data';  
+      : 'No body data'; 
+      const cleanmessage = messageBody.replace(/[\n\r]/g,"");
       return {
         senderEmail,
         senderName,
         messageId,
         messageSnippet,
-        messageBody,
+        cleanmessage,
       };
     });
   
