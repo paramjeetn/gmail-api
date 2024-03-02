@@ -35,12 +35,6 @@ app.get('/auth/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Decode the JWT token to get the user ID
-    // const decodedToken = jwtDecode(tokens.id_token);
-    // const userId = decodedToken.email;
-
-    // console.log('User ID:', userId);
-
     // Retrieve the user's Gmail messages with a maximum of 5 messages
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
     const messages = await gmail.users.messages.list({
@@ -48,59 +42,45 @@ app.get('/auth/callback', async (req, res) => {
       maxResults: 5,
     });
 
-    // Log individual message details and save to a JSON file
-    const data = messages.data.messages.map(async (message) => {
+    // Process individual message details and store in an array
+    const messageData = [];
+    for (const message of messages.data.messages) {
       const messageDetails = await gmail.users.messages.get({
         userId: 'me',
         id: message.id,
       });
-      const senderEmail = messageDetails.data.payload.headers.find(header => header.name === 'From').value;
+
+      const senderEmail = messageDetails.data.payload.headers.find(
+        (header) => header.name === 'From'
+      ).value;
       const senderName = senderEmail.split('<')[0].trim(); // Extract sender name from 'From' field
       const messageId = messageDetails.data.id;
       const messageSnippet = messageDetails.data.snippet;
       const messageBody = messageDetails.data.payload.parts && messageDetails.data.payload.parts[0]
-      ? Buffer.from(messageDetails.data.payload.parts[0].body.data, 'base64').toString('utf-8')
-      : 'No body data'; 
-      const cleanmessage = messageBody.replace(/[\n\r]/g,"");
-      return {
+        ? Buffer.from(messageDetails.data.payload.parts[0].body.data, 'base64').toString('utf-8')
+        : 'No body data';
+      const cleanmessage = messageBody.replace(/[\n\r]/g, "");
+
+      messageData.push({
         senderEmail,
         senderName,
         messageId,
         messageSnippet,
         cleanmessage,
-      };
-    });
-  
-    const jsonData = await Promise.all(data);
-    const jsonFileName = 'gmail_messages.json';
+      });
+    }
 
-    // Save the data to a JSON file
-    fs.writeFileSync(jsonFileName, JSON.stringify(jsonData, null, 2));
+    // Render a template or use appropriate methods to dynamically create HTML
+    // with the processed data from messageData
 
-    console.log('Data saved to:', jsonFileName);
-    
-    res.send(JSON.stringify(jsonFileName));
-    fs.unlinkSync(jsonFileName);
-    res.redirect("/")
+    res.render('gmail_messages', { messageData }); // Assuming a template named 'gmail_messages'
 
-    // res.download(jsonFileName, (err) => {
-    //   if (err) {
-    //     console.error('Error sending JSON file:', err.message);
-    //     res.status(500).send(`Error sending JSON file: ${err.message}`);
-    //   } else {
-    //     console.log('JSON file sent successfully');
-    //     // Remove the JSON file after sending
-    //     fs.unlinkSync(jsonFileName);
-    //     res.redirect("/")
-    //   }
-    // })
-    
-    
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).send(`Error decoding token: ${error.message}`);
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
