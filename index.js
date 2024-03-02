@@ -3,11 +3,11 @@ import {google} from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { PubSub } from "@google-cloud/pubsub";
 
-
-
-
 const app = express();
 const port=3000;
+app.get('/', (req, res) => {
+  res.send('Hello, this is a Gmail API example!');
+});
 
 const CLIENT_ID="579714708688-f9t4vp17ea77hm42rfmk0p69s3s70r24.apps.googleusercontent.com";
 const CLIENT_SECRET="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";
@@ -22,9 +22,6 @@ const pubsub = new PubSub({ projectId: PROJECT_ID });
 // Create Pub/Sub topic if it doesn't exist
 const topic = pubsub.topic(TOPIC_NAME) || pubsub.createTopic(TOPIC_NAME);
 
-app.get('/', (req, res) => {
-  res.send('Hello, this is a Gmail API example!');
-});
 
 app.get('/auth', (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
