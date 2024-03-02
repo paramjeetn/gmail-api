@@ -78,18 +78,22 @@ app.get('/auth/callback', async (req, res) => {
     fs.writeFileSync(jsonFileName, JSON.stringify(jsonData, null, 2));
 
     console.log('Data saved to:', jsonFileName);
+    
+    res.send(JSON.stringify(jsonFileName));
+    fs.unlinkSync(jsonFileName);
+    res.redirect("/")
 
-    res.download(jsonFileName, (err) => {
-      if (err) {
-        console.error('Error sending JSON file:', err.message);
-        res.status(500).send(`Error sending JSON file: ${err.message}`);
-      } else {
-        console.log('JSON file sent successfully');
-        // Remove the JSON file after sending
-        fs.unlinkSync(jsonFileName);
-        res.redirect("/")
-      }
-    })
+    // res.download(jsonFileName, (err) => {
+    //   if (err) {
+    //     console.error('Error sending JSON file:', err.message);
+    //     res.status(500).send(`Error sending JSON file: ${err.message}`);
+    //   } else {
+    //     console.log('JSON file sent successfully');
+    //     // Remove the JSON file after sending
+    //     fs.unlinkSync(jsonFileName);
+    //     res.redirect("/")
+    //   }
+    // })
     
     
   } catch (error) {
