@@ -21,14 +21,6 @@ app.get('/', (req, res) => {
   res.send('Hello, this is a Gmail API example!');
 });
 
-app.get('/auth', (req, res) => {
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'online',
-    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
-  });
-  res.redirect(authUrl);
-});
-
 app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
   try {
@@ -49,18 +41,14 @@ app.get('/auth/callback', async (req, res) => {
         userId: 'me',
         id: message.id,
       });
-
-      const senderEmail = messageDetails.data.payload.headers.find(
-        (header) => header.name === 'From'
-      ).value;
-      const senderName = senderEmail.split('<')[0].trim(); // Extract sender name from 'From' field
+      const senderEmail = messageDetails.data.payload.headers.find(header => header.name === 'From').value;
+      const senderName = senderEmail.split('<')[0].trim();
       const messageId = messageDetails.data.id;
       const messageSnippet = messageDetails.data.snippet;
       const messageBody = messageDetails.data.payload.parts && messageDetails.data.payload.parts[0]
         ? Buffer.from(messageDetails.data.payload.parts[0].body.data, 'base64').toString('utf-8')
         : 'No body data';
-      const cleanmessage = messageBody.replace(/[\n\r]/g, "");
-
+      const cleanmessage = messageBody.replace(/[\n\r]/g,"");
       messageData.push({
         senderEmail,
         senderName,
@@ -70,14 +58,40 @@ app.get('/auth/callback', async (req, res) => {
       });
     }
 
-    // Render a template or use appropriate methods to dynamically create HTML
-    // with the processed data from messageData
+    // Generate HTML dynamically using the processed data
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Gmail Messages</title>
+      </head>
+      <body>
+        <h1>Your Gmail Messages</h1>
+        <ul>
+          ${messageData.map(message => `
+            <li>
+              <b>From:</b> ${message.senderName} &lt;${message.senderEmail}&gt;
+              <br>
+              <b>ID:</b> ${message.messageId}
+              <br>
+              <b>Snippet:</b> ${message.messageSnippet}
+              <br>
+              <b>Body:</b> ${message.cleanmessage}
+            </li>
+          `).join('')}
+        </ul>
+      </body>
+      </html>
+    `;
 
-    res.render('gmail_messages', { messageData }); // Assuming a template named 'gmail_messages'
-
+    // Send the generated HTML as the response
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.write(htmlTemplate);
+    res.end();
   } catch (error) {
     console.error('Error:', error.message);
-    res.status(500).send(`Error decoding token: ${error.message}`);
+    res.status(500).send(`Error retrieving messages: ${error.message}`);
   }
 });
 
