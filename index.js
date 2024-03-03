@@ -2,6 +2,8 @@ const fs = require('fs');
 const express = require('express');
 const { google } = require('googleapis');
 const { OAuth2Client } = require('google-auth-library');
+const cron = require('node-cron');
+const axios = require('axios');
 
 const app = express();
 const PORT = 3000;
@@ -15,7 +17,9 @@ const oauth2Client = new OAuth2Client(
     credentials.installed.client_secret,
     credentials.installed.redirect_uris,
 );
-
+app.get("/",(req,res)=>{
+  res.send("Hello, you are welcome!");
+})
 app.get('/auth', (req, res) => {
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'online',
@@ -39,6 +43,21 @@ app.get('/auth/callback', async (req, res) => {
         res.status(500).send(`Error decoding token: ${error.message}`);
     }
 });
+
+cron.schedule('15 23 * * *', () => {
+  console.log('Running scheduled task at 6 am...');
+  fetchData();
+});
+const endpointUrl="http://localhost:3000/get-gmail-data"
+async function fetchData() {
+  try {
+      const response = await axios.get(endpointUrl);
+      console.log('Response from the endpoint:', response.data);
+  } catch (error) {
+      console.error('Error calling the endpoint:', error.message);
+  }
+}
+
 
 app.get('/get-gmail-data', async (req, res) => {
   if (useStoredRefreshToken()) {
