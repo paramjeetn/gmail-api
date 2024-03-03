@@ -2,15 +2,14 @@ import express from "express";
 import {google} from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 
-dotenv.config();
-
 const PORT = 3000;
 const CLIENT_ID="579714708688-f9t4vp17ea77hm42rfmk0p69s3s70r24.apps.googleusercontent.com";
 const CLIENT_SECRET="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";
 const REDIRECT_URI="https://gmail-api-eight.vercel.app/auth/callback";
-
+//http://localhost:3000/auth/callback
+//https://gmail-api-eight.vercel.app/auth/callback
 const app = express();
-const oauth2Client = new OAuth2Client(GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REDIRECT_URL);
+const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 app.get("/", (req,res) => {
     res.send("hii you are in home page !");
@@ -73,5 +72,5 @@ app.post('/notifications', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running at port :- ${process.env.PORT}`);
+    console.log(`Server running at port :- ${PORT}`);
 });
