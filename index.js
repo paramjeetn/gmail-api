@@ -77,7 +77,7 @@ function readLastDate() {
         return JSON.parse(fs.readFileSync(LAST_DATE_PATH));
     } else {
         console.log(`Last date file (${LAST_DATE_PATH}) not found. Using default date.`);
-        return '2023-01-01'; // Default date
+        return '2024-03-01'; // Default date
     }
 }
 
@@ -91,21 +91,47 @@ app.get('/get-gmail-data', async (req, res) => {
 
         // Calculate the date range dynamically based on the lastDate
         const startDateInSeconds = Math.floor(new Date(lastDate).getTime() / 1000);
-        const currentDateInSeconds = Math.floor(Date.now() / 1000);
+        // const currentDateInSeconds = Math.floor(Date.now() / 1000);
 
         const messages = await gmail.users.messages.list({
             userId: 'me',
-            maxResults: 5,
-            q: `in:sent after:${startDateInSeconds}`,
+            maxResults: 10,
+            q: `after:${startDateInSeconds}`,
         });
-
+        const result=[];
+        const messageList = messages.data.messages;
+        for (const message of messageList) {
+            const messageDetails = await gmail.users.messages.get({
+                userId: 'me',
+                id: message.id,
+            });
+            const messageBody = messageDetails.data.payload.parts && messageDetails.data.payload.parts[0].body && messageDetails.data.payload.parts[0].body.data;
+            const decodedMessageBody = messageBody ? Buffer.from(messageDetails.data.payload.parts[0].body.data, 'base64').toString('utf-8') : '';
+        
+            const messageSnippet = messageDetails.data.snippet;
+            
+            // Extract sender's email address
+            const senderEmail = messageDetails.data.payload.headers.find(header => header.name === 'From').value;
+        
+            // Extract sender's name (if available)
+            const senderNameHeader = messageDetails.data.payload.headers.find(header => header.name === 'From');
+            const senderName = senderNameHeader ? senderNameHeader.value.split('<')[0].trim() : '';
+            const messageInfo = {
+                messageId: message.id,
+                senderEmail: senderEmail,
+                senderName: senderName,
+                snippet: messageSnippet,
+                body: decodedMessageBody,
+                
+            };
+            result.push(messageInfo);
+        }
         // Update the lastDate based on the current date
-        lastDate = new Date(currentDateInSeconds * 1000).toISOString().split('T')[0];
-
+        lastDate = new Date(Date.now()).toISOString().split('T')[0];
         // Save the updated lastDate to the file
         fs.writeFileSync(LAST_DATE_PATH, JSON.stringify(lastDate));
 
-        res.json(messages.data);
+        res.json(result);
     } catch (error) {
         console.error('Error fetching Gmail data:', error.message);
         res.status(500).send(`Error fetching Gmail data: ${error.message}`);
